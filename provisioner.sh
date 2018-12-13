@@ -2,9 +2,6 @@
 
 KUBEVER=1.10.3-00
 
-echo net.bridge.bridge-nf-call-iptables = 1 >> /etc/sysctl.conf
-sysctl -p
-
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl software-properties-common
 
@@ -14,6 +11,7 @@ add-apt-repository "deb https://download.docker.com/linux/$(. /etc/os-release; e
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 
 # Install Docker-CE
+apt-get update
 DOCKERVER=$(apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}')
 apt-get install -y docker-ce=$DOCKERVER
 usermod -aG docker vagrant
@@ -47,9 +45,8 @@ Environment="KUBELET_AUTHZ_ARGS=--authorization-mode=Webhook --client-ca-file=/e
 Environment="KUBELET_CADVISOR_ARGS=--cadvisor-port=0"
 Environment="KUBELET_CERTIFICATE_ARGS=--rotate-certificates=true --cert-dir=/var/lib/kubelet/pki"
 ExecStart=
-ExecStart=/usr/bin/kubelet $KUBELET_KUBECONFIG_ARGS $KUBELET_SYSTEM_PODS_ARGS $KUBELET_NETWORK_ARGS $KUBELET_DNS_ARGS $KUBELET_AUTHZ_ARGS $KUBELET_CADVISOR_ARGS $KUBELET_CERTIFICATE_ARGS $KUBELET_EXTRA_ARGS
+ExecStart=/usr/bin/kubelet \$KUBELET_KUBECONFIG_ARGS \$KUBELET_SYSTEM_PODS_ARGS \$KUBELET_NETWORK_ARGS \$KUBELET_DNS_ARGS \$KUBELET_AUTHZ_ARGS \$KUBELET_CADVISOR_ARGS \$KUBELET_CERTIFICATE_ARGS \$KUBELET_EXTRA_ARGS
 EOF
-
 systemctl daemon-reload
 systemctl restart kubelet
 
@@ -60,6 +57,17 @@ if [ "$HOSTNAME" == "node-1" ]; then
     --service-cidr=10.244.0.0/16 | tee /kube-config
 fi
 
+# Setup flannel
+if [ "$HOSTNAME" == "node-1" ]; then
+  mkdir -p $HOME/.kube
+  cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  curl -O https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
+  sed -i 's/"--kube-subnet-mgr"/"--kube-subnet-mgr", "--iface=enp0s8"/g' kube-flannel.yml
+  kubectl apply -f kube-flannel.yml
+  kubectl get node
+  kubectl get po -o wide -n kube-system
+fi
+
 VH=/home/vagrant
 VU=$(id vagrant -u)
 VG=$(id vagrant -g)
@@ -68,11 +76,3 @@ cp -i /etc/kubernetes/admin.conf $VH/.kube/config
 chown $VU:$VG $VH/.kube
 chown $VU:$VG $VH/.kube/config
 
-# Setup flannel
-if [ "$HOSTNAME" == "node-1" ]; then
-  curl -O https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
-  sed -i 's/"--kube-subnet-mgr"/"--kube-subnet-mgr", "--iface=enp0s8"/g' kube-flannel.yml
-  kubectl apply -f kube-flannel.yml
-  kubectl get node
-  kubectl get po -o wide -n kube-system
-fi
