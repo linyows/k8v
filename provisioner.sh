@@ -51,7 +51,7 @@ EOF
 systemctl daemon-reload
 systemctl restart kubelet
 
-if [ "$HOSTNAME" == "node-1" ]; then
+if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
   kubeadm init --pod-network-cidr=10.244.0.0/16 \
     --apiserver-advertise-address=$IP \

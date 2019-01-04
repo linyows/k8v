@@ -9,7 +9,7 @@ Vagrant.configure('2') do |config|
   end
 
   (1..3).each do |i|
-    name = "node-#{i}"
+    name = i == 1 ? "master-#{i}" : "node-#{i - 1}"
     config.vm.define name do |c|
       c.vm.hostname = name
       c.vm.network 'private_network', ip: "172.16.20.#{i+10}"
