@@ -53,9 +53,10 @@ systemctl restart kubelet
 
 if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
+  rm -rf /vagrant/kubeadm-init.log
   kubeadm init --pod-network-cidr=10.244.0.0/16 \
     --apiserver-advertise-address=$IP \
-    --service-cidr=10.244.0.0/16 | tee /kube-config
+    --service-cidr=10.244.0.0/16 | tee /vagrant/kubeadm-init.log
 
   # Setup flannel
   mkdir -p $HOME/.kube
@@ -74,4 +75,7 @@ if [ "$HOSTNAME" == "master-1" ]; then
   cp -i /etc/kubernetes/admin.conf $VH/.kube/config
   chown $VU:$VG $VH/.kube
   chown $VU:$VG $VH/.kube/config
+else
+  # Join to cluster
+  eval $(grep "kubeadm join" /vagrant/kubeadm-init.log)
 fi
