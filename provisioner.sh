@@ -34,6 +34,7 @@ apt-get update && apt-get install -yq python-software-properties
 add-apt-repository ppa:gluster/glusterfs-3.12
 apt-get update && apt-get install -yq glusterfs-client
 
+# Setup kubelet
 IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
 cat <<EOF >/etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 [Service]
@@ -50,15 +51,13 @@ EOF
 systemctl daemon-reload
 systemctl restart kubelet
 
-# Init kubeadm
 if [ "$HOSTNAME" == "node-1" ]; then
+  # Init kubeadm
   kubeadm init --pod-network-cidr=10.244.0.0/16 \
     --apiserver-advertise-address=$IP \
     --service-cidr=10.244.0.0/16 | tee /kube-config
-fi
 
-# Setup flannel
-if [ "$HOSTNAME" == "node-1" ]; then
+  # Setup flannel
   mkdir -p $HOME/.kube
   cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
   curl -O https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
@@ -66,13 +65,13 @@ if [ "$HOSTNAME" == "node-1" ]; then
   kubectl apply -f kube-flannel.yml
   kubectl get node
   kubectl get po -o wide -n kube-system
+
+  # Setup kubectl
+  VH=/home/vagrant
+  VU=$(id vagrant -u)
+  VG=$(id vagrant -g)
+  mkdir -p $VH/.kube
+  cp -i /etc/kubernetes/admin.conf $VH/.kube/config
+  chown $VU:$VG $VH/.kube
+  chown $VU:$VG $VH/.kube/config
 fi
-
-VH=/home/vagrant
-VU=$(id vagrant -u)
-VG=$(id vagrant -g)
-mkdir -p $VH/.kube
-cp -i /etc/kubernetes/admin.conf $VH/.kube/config
-chown $VU:$VG $VH/.kube
-chown $VU:$VG $VH/.kube/config
-
