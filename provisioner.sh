@@ -25,6 +25,8 @@ EOF
 apt-get update
 apt-get install -y kubelet=$KUBEVER kubeadm=$KUBEVER kubectl=$KUBEVER
 
+IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
+
 if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
   rm -rf /vagrant/kubeadm-init.log
