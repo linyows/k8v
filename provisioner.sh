@@ -1,6 +1,6 @@
 #!/bin/bash -xe
 
-KUBEVER=1.10.3-00
+KUBEVER=1.13.1-00
 
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl software-properties-common
@@ -24,32 +24,6 @@ EOF
 # Install Kubernetes
 apt-get update
 apt-get install -y kubelet=$KUBEVER kubeadm=$KUBEVER kubectl=$KUBEVER
-
-# Install nfs-client
-apt-get install -y nfs-common
-
-# Install GlusterFs Client
-export DEBIAN_FRONTEND=noninteractive
-apt-get update && apt-get install -yq python-software-properties
-add-apt-repository ppa:gluster/glusterfs-3.12
-apt-get update && apt-get install -yq glusterfs-client
-
-# Setup kubelet
-IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
-cat <<EOF >/etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-[Service]
-Environment="KUBELET_KUBECONFIG_ARGS=--bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf"
-Environment="KUBELET_SYSTEM_PODS_ARGS=--pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true"
-Environment="KUBELET_NETWORK_ARGS=--network-plugin=cni --cni-conf-dir=/etc/cni/net.d --cni-bin-dir=/opt/cni/bin"
-Environment="KUBELET_DNS_ARGS=--cluster-dns=10.244.0.10 --cluster-domain=cluster.local --node-ip=$IP"
-Environment="KUBELET_AUTHZ_ARGS=--authorization-mode=Webhook --client-ca-file=/etc/kubernetes/pki/ca.crt"
-Environment="KUBELET_CADVISOR_ARGS=--cadvisor-port=0"
-Environment="KUBELET_CERTIFICATE_ARGS=--rotate-certificates=true --cert-dir=/var/lib/kubelet/pki"
-ExecStart=
-ExecStart=/usr/bin/kubelet \$KUBELET_KUBECONFIG_ARGS \$KUBELET_SYSTEM_PODS_ARGS \$KUBELET_NETWORK_ARGS \$KUBELET_DNS_ARGS \$KUBELET_AUTHZ_ARGS \$KUBELET_CADVISOR_ARGS \$KUBELET_CERTIFICATE_ARGS \$KUBELET_EXTRA_ARGS
-EOF
-systemctl daemon-reload
-systemctl restart kubelet
 
 if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
