@@ -12,7 +12,7 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 
 # Install Docker-CE
 apt-get update
-DOCKERVER=$(apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}')
+DOCKERVER=$(apt-cache madison docker-ce | grep 18.06 | head -1 | awk '{print $3}')
 apt-get install -y docker-ce=$DOCKERVER
 usermod -aG docker vagrant
 
