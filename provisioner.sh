@@ -24,33 +24,35 @@ EOF
 # Install Kubernetes
 apt-get update
 apt-get install -y kubelet=$KUBEVER kubeadm=$KUBEVER kubectl=$KUBEVER
+apt-mark hold kubelet kubeadm kubectl
+swapoff -a
 
 IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
+echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=10.244.0.10\"" > /etc/default/kubelet
+systemctl restart kubelet
 
 if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
-  rm -rf /vagrant/kubeadm-init.log
   kubeadm init --pod-network-cidr=10.244.0.0/16 \
-    --apiserver-advertise-address=$IP \
-    --service-cidr=10.244.0.0/16 | tee /vagrant/kubeadm-init.log
-
-  # Setup flannel
-  mkdir -p $HOME/.kube
-  cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-  curl -O https://raw.githubusercontent.com/coreos/flannel/v0.9.1/Documentation/kube-flannel.yml
-  sed -i 's/"--kube-subnet-mgr"/"--kube-subnet-mgr", "--iface=enp0s8"/g' kube-flannel.yml
-  kubectl apply -f kube-flannel.yml
-  kubectl get node
-  kubectl get po -o wide -n kube-system
+               --service-cidr=10.244.0.0/16 \
+               --apiserver-advertise-address=$IP \
+               --apiserver-cert-extra-sans=$IP \
+               --node-name $HOSTNAME | tee /vagrant/kubeadm-init.log
 
   # Setup kubectl
-  VH=/home/vagrant
-  VU=$(id vagrant -u)
-  VG=$(id vagrant -g)
-  mkdir -p $VH/.kube
-  cp -i /etc/kubernetes/admin.conf $VH/.kube/config
-  chown $VU:$VG $VH/.kube
-  chown $VU:$VG $VH/.kube/config
+  mkdir -p $HOME/.kube
+  cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+
+  mkdir -p /home/vagrant/.kube
+  cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+  chown -R vagrant:vagrant /home/vagrant/.kube
+
+  # Setup flannel
+  curl -Os https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  sed -i 's/        - --kube-subnet-mgr/        - --kube-subnet-mgr\n        - --iface=enp0s8/g' kube-flannel.yml
+  kubectl apply -f kube-flannel.yml
+  kubectl get nodes
+  kubectl get po -o wide -n kube-system
 else
   # Join to cluster
   eval $(grep "kubeadm join" /vagrant/kubeadm-init.log)
