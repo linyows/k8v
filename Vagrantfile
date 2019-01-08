@@ -5,7 +5,7 @@ Vagrant.configure('2') do |config|
   config.vm.box = 'ubuntu/bionic64'
   config.vm.provider 'virtualbox' do |v|
     v.cpus = 2
-    v.memory = 1024
+    v.memory = 2048
   end
 
   (1..3).each do |i|
