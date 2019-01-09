@@ -42,15 +42,12 @@ if [ "$HOSTNAME" == "master-1" ]; then
   # Setup kubectl
   mkdir -p $HOME/.kube
   cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-
   mkdir -p /home/vagrant/.kube
   cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
   chown -R vagrant:vagrant /home/vagrant/.kube
 
   # Setup flannel
-  curl -Os https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-  sed -i 's/        - --kube-subnet-mgr/        - --kube-subnet-mgr\n        - --iface=enp0s8/g' kube-flannel.yml
-  kubectl apply -f kube-flannel.yml
+  kubectl apply -f /vagrant/kube-flannel.yml
   kubectl get nodes
   kubectl get po -o wide -n kube-system
 else
