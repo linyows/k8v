@@ -73,8 +73,9 @@ else
     cp /vagrant/etc/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
     cp /vagrant/etc/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
     cp /vagrant/etc/admin.conf /etc/kubernetes/
+    cmd=$(grep "kubeadm join" /vagrant/kubeadm-init.log)
+    eval "$cmd --experimental-control-plane"
+  else
+    eval $(grep "kubeadm join" /vagrant/kubeadm-init.log)
   fi
-
-  # Join to cluster
-  eval $(grep "kubeadm join" /vagrant/kubeadm-init.log)
 fi
