@@ -13,7 +13,7 @@ Vagrant.configure('2') do |config|
     config.vm.define name do |c|
       c.vm.hostname = name
       c.vm.network 'private_network', ip: "172.16.20.#{i+10}"
-      c.vm.provision 'shell', path: 'provisioner.sh'
+      c.vm.provision 'shell', path: 'provision.sh'
     end
   end
 end
