@@ -8,8 +8,8 @@ Vagrant.configure('2') do |config|
     v.memory = 2048
   end
 
-  (1..3).each do |i|
-    name = i == 1 ? "master-#{i}" : "node-#{i - 1}"
+  (1..6).each do |i|
+    name = (1..3).include?(i) ? "master-#{i}" : "woker-#{i - 3}"
     config.vm.define name do |c|
       c.vm.hostname = name
       c.vm.network 'private_network', ip: "172.16.20.#{i+10}"
