@@ -1,8 +1,19 @@
-# https://kubernetes.io/docs/setup/independent/high-availability/
+# https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm#InitConfiguration
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 172.16.20.11
+  bindPort: 6443
+---
+# https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm#ClusterConfiguration
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: stable
-apiServer:
-  certSANs:
-  - "LOAD_BALANCER_DNS"
-controlPlaneEndpoint: "LOAD_BALANCER_DNS:LOAD_BALANCER_PORT"
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.244.0.0/16
+# https://kubernetes.io/docs/setup/independent/high-availability/
+#apiServer:
+#  certSANs:
+#  - "LOAD_BALANCER_DNS"
+#controlPlaneEndpoint: "LOAD_BALANCER_DNS:LOAD_BALANCER_PORT"
