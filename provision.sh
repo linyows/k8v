@@ -37,7 +37,8 @@ if [ "$HOSTNAME" == "master-1" ]; then
                --service-cidr=10.244.0.0/16 \
                --apiserver-advertise-address=$IP \
                --apiserver-cert-extra-sans=$IP \
-               --node-name $HOSTNAME | tee /vagrant/kubeadm-init.log
+               --node-name $HOSTNAME \
+               --config=/vagrant/kubeadm-config.yaml | tee /vagrant/kubeadm-init.log
 
   # Setup kubectl
   mkdir -p $HOME/.kube
