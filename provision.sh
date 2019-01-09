@@ -33,12 +33,7 @@ systemctl restart kubelet
 
 if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
-  kubeadm init --pod-network-cidr=10.244.0.0/16 \
-               --service-cidr=10.244.0.0/16 \
-               --apiserver-advertise-address=$IP \
-               --apiserver-cert-extra-sans=$IP \
-               --node-name $HOSTNAME \
-               --config=/vagrant/kubeadm-config.yaml | tee /vagrant/kubeadm-init.log
+  kubeadm init --config=/vagrant/kubeadm-config.yaml | tee /vagrant/kubeadm-init.log
 
   # Setup kubectl
   mkdir -p $HOME/.kube
