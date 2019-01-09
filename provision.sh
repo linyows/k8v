@@ -55,7 +55,26 @@ if [ "$HOSTNAME" == "master-1" ]; then
 
   kubectl get nodes
   kubectl get po -o wide -n kube-system
+
+  # Export to shared dir
+  rm -rf /vagrant/etc
+  cp -R /etc/kubernetes /vagrant/etc
 else
+  echo $HOSTNAME | grep -q 'master'
+  if [ $? -eq 0 ]; then
+    # Import from shared dir
+    mkdir -p /etc/kubernetes/pki/etcd
+    cp /vagrant/etc/pki/ca.crt /etc/kubernetes/pki/
+    cp /vagrant/etc/pki/ca.key /etc/kubernetes/pki/
+    cp /vagrant/etc/pki/sa.pub /etc/kubernetes/pki/
+    cp /vagrant/etc/pki/sa.key /etc/kubernetes/pki/
+    cp /vagrant/etc/pki/front-proxy-ca.crt /etc/kubernetes/pki/
+    cp /vagrant/etc/pki/front-proxy-ca.key /etc/kubernetes/pki/
+    cp /vagrant/etc/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
+    cp /vagrant/etc/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
+    cp /vagrant/etc/admin.conf /etc/kubernetes/
+  fi
+
   # Join to cluster
   eval $(grep "kubeadm join" /vagrant/kubeadm-init.log)
 fi
