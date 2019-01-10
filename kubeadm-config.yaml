@@ -1,19 +1,8 @@
-# https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm#InitConfiguration
-apiVersion: kubeadm.k8s.io/v1beta1
-kind: InitConfiguration
-localAPIEndpoint:
-  advertiseAddress: 172.16.20.11
-  bindPort: 6443
----
-# https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm#ClusterConfiguration
+# https://kubernetes.io/docs/setup/independent/high-availability/
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-networking:
-  dnsDomain: cluster.local
-  podSubnet: 10.244.0.0/16
-  serviceSubnet: 10.244.0.0/16
-# https://kubernetes.io/docs/setup/independent/high-availability/
+kubernetesVersion: stable
 apiServer:
   certSANs:
-  - "172.16.20.10"
-controlPlaneEndpoint: "172.16.20.10:6443"
+  - "k8s.local"
+controlPlaneEndpoint: "k8s.local:6443"
