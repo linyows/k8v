@@ -42,10 +42,8 @@ if [ "$HOSTNAME" == "master-1" ]; then
   cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
   chown -R vagrant:vagrant /home/vagrant/.kube
 
-  # Setup weave
+  # Apply CNI
   kubectl apply -f /vagrant/net.yaml
-
-  # Setup flannel
   #kubectl apply -f /vagrant/kube-flannel.yml
 
   kubectl get nodes
