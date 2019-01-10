@@ -1,6 +1,17 @@
 #!/bin/bash -xe
 
 KUBEVER=1.13.1-00
+LBIP=172.16.20.10
+LBDNS="k8s.local"
+CLUSTERIP="10.244.0.10"
+
+setup_kubectl() {
+  mkdir -p $HOME/.kube
+  cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  mkdir -p /home/vagrant/.kube
+  cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+  chown -R vagrant:vagrant /home/vagrant/.kube
+}
 
 apt-get update
 apt-get install -y apt-transport-https ca-certificates curl software-properties-common
@@ -27,20 +38,15 @@ apt-get install -y kubelet=$KUBEVER kubeadm=$KUBEVER kubectl=$KUBEVER
 apt-mark hold kubelet kubeadm kubectl
 swapoff -a
 
+echo "$LBIP $LBDNS" >> /etc/hosts
 IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
-echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=10.244.0.10\"" > /etc/default/kubelet
+echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
 systemctl restart kubelet
 
 if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
   kubeadm init --config=/vagrant/kubeadm-config.yaml | tee /vagrant/kubeadm-init.log
-
-  # Setup kubectl
-  mkdir -p $HOME/.kube
-  cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-  mkdir -p /home/vagrant/.kube
-  cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
-  chown -R vagrant:vagrant /home/vagrant/.kube
+  setup_kubectl
 
   # Apply CNI
   kubectl apply -f /vagrant/net.yaml
@@ -66,8 +72,9 @@ else
     cp /vagrant/etc/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
     cp /vagrant/etc/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
     cp /vagrant/etc/admin.conf /etc/kubernetes/
+    setup_kubectl
     cmd=$(grep "kubeadm join" /vagrant/kubeadm-init.log)
-    eval "$cmd --experimental-control-plane"
+    eval "$cmd --experimental-control-plane --apiserver-advertise-address=$IP"
   else
     eval $(grep "kubeadm join" /vagrant/kubeadm-init.log)
   fi
