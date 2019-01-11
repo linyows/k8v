@@ -45,37 +45,38 @@ systemctl restart kubelet
 
 if [ "$HOSTNAME" == "master-1" ]; then
   # Init kubeadm
-  kubeadm init --config=/vagrant/kubeadm-config.yaml | tee /vagrant/kubeadm-init.log
+  kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
+  #kubeadm init --config=/vagrant/flannel/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
   setup_kubectl
 
   # Apply CNI
-  kubectl apply -f /vagrant/net.yaml
-  #kubectl apply -f /vagrant/kube-flannel.yml
+  kubectl apply -f /vagrant/weave/weave-net.yaml
+  #kubectl apply -f /vagrant/flannel/flannel.yaml
 
   kubectl get nodes
   kubectl get po -o wide -n kube-system
 
   # Export to shared dir
-  rm -rf /vagrant/etc
-  cp -R /etc/kubernetes /vagrant/etc
+  rm -rf /vagrant/shared/kubernetes
+  cp -R /etc/kubernetes /vagrant/shared
 else
   echo $HOSTNAME | grep -q 'master'
   if [ $? -eq 0 ]; then
     # Import from shared dir
     mkdir -p /etc/kubernetes/pki/etcd
-    cp /vagrant/etc/pki/ca.crt /etc/kubernetes/pki/
-    cp /vagrant/etc/pki/ca.key /etc/kubernetes/pki/
-    cp /vagrant/etc/pki/sa.pub /etc/kubernetes/pki/
-    cp /vagrant/etc/pki/sa.key /etc/kubernetes/pki/
-    cp /vagrant/etc/pki/front-proxy-ca.crt /etc/kubernetes/pki/
-    cp /vagrant/etc/pki/front-proxy-ca.key /etc/kubernetes/pki/
-    cp /vagrant/etc/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
-    cp /vagrant/etc/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
-    cp /vagrant/etc/admin.conf /etc/kubernetes/
+    cp /vagrant/shared/kubernetes/pki/ca.crt /etc/kubernetes/pki/
+    cp /vagrant/shared/kubernetes/pki/ca.key /etc/kubernetes/pki/
+    cp /vagrant/shared/kubernetes/pki/sa.pub /etc/kubernetes/pki/
+    cp /vagrant/shared/kubernetes/pki/sa.key /etc/kubernetes/pki/
+    cp /vagrant/shared/kubernetes/pki/front-proxy-ca.crt /etc/kubernetes/pki/
+    cp /vagrant/shared/kubernetes/pki/front-proxy-ca.key /etc/kubernetes/pki/
+    cp /vagrant/shared/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
+    cp /vagrant/shared/kubernetes/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
+    cp /vagrant/shared/kubernetes/admin.conf /etc/kubernetes/
     setup_kubectl
-    cmd=$(grep "kubeadm join" /vagrant/kubeadm-init.log)
+    cmd=$(grep "kubeadm join" /vagrant/shared/kubeadm-init.log)
     eval "$cmd --experimental-control-plane --apiserver-advertise-address=$IP"
   else
-    eval $(grep "kubeadm join" /vagrant/kubeadm-init.log)
+    eval $(grep "kubeadm join" /vagrant/shared/kubeadm-init.log)
   fi
 fi
