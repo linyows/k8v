@@ -13,7 +13,7 @@ Vagrant.configure('2') do |config|
     c.vm.hostname = 'lb'
     c.vm.network 'private_network', ip: '172.16.20.10'
     #c.vm.network :forwarded_port, guest: 80, host: 8080
-    c.vm.provision 'shell', path: 'provision.lb.sh'
+    c.vm.provision 'shell', path: 'provision/haproxy.sh'
   end
 
   # Masters and Workers
@@ -26,7 +26,7 @@ Vagrant.configure('2') do |config|
       end
       c.vm.hostname = name
       c.vm.network 'private_network', ip: "172.16.20.#{i+10}"
-      c.vm.provision 'shell', path: 'provision.sh'
+      c.vm.provision 'shell', path: 'provision/kubernetes.sh'
     end
   end
 end
