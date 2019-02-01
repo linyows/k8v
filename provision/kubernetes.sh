@@ -43,25 +43,13 @@ IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
 echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
 systemctl restart kubelet
 
-if [ "$HOSTNAME" == "master-1" ]; then
+echo $HOSTNAME | grep -q 'master'
+# Master Node
+if [ $? -eq 0 ]; then
   # Init kubeadm
-  kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
-  #kubeadm init --config=/vagrant/flannel/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
-  setup_kubectl
-
-  # Apply CNI
-  kubectl apply -f /vagrant/weave/weave-net.yaml
-  #kubectl apply -f /vagrant/flannel/flannel.yaml
-
-  kubectl get nodes
-  kubectl get po -o wide -n kube-system
-
-  # Export to shared dir
-  rm -rf /vagrant/shared/kubernetes
-  cp -R /etc/kubernetes /vagrant/shared
-else
-  echo $HOSTNAME | grep -q 'master'
-  if [ $? -eq 0 ]; then
+  if [ "$HOSTNAME" == "master-1" ]; then
+    kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
+  else
     # Import from shared dir
     mkdir -p /etc/kubernetes/pki/etcd
     cp /vagrant/shared/kubernetes/pki/ca.crt /etc/kubernetes/pki/
@@ -74,9 +62,25 @@ else
     cp /vagrant/shared/kubernetes/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
     cp /vagrant/shared/kubernetes/admin.conf /etc/kubernetes/
     setup_kubectl
-    cmd=$(grep "kubeadm join" /vagrant/shared/kubeadm-init.log)
-    eval "$cmd --experimental-control-plane --apiserver-advertise-address=$IP"
-  else
-    eval $(grep "kubeadm join" /vagrant/shared/kubeadm-init.log)
+    kubeadm init --config=/vagrant/weave/kubeadm-config.yaml
   fi
+  #kubeadm init --config=/vagrant/flannel/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
+  setup_kubectl
+
+  # Apply CNI
+  kubectl apply -f /vagrant/weave/weave-net.yaml
+  #kubectl apply -f /vagrant/flannel/flannel.yaml
+
+  kubectl get nodes
+  kubectl get po -o wide -n kube-system
+
+  if [ "$HOSTNAME" == "master-1" ]; then
+    # Export to shared dir
+    rm -rf /vagrant/shared/kubernetes
+    cp -R /etc/kubernetes /vagrant/shared
+  fi
+
+# Worker Node
+else
+  eval $(grep "kubeadm join" /vagrant/shared/kubeadm-init.log)
 fi
