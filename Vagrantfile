@@ -19,7 +19,7 @@ Vagrant.configure('2') do |config|
   # Masters and Workers
   (1..6).each do |i|
     name = (1..3).include?(i) ?  "master-#{i}" : "woker-#{i - 3}"
-    config.vm.define name do |c|
+    config.vm.define name, autostart: %w(1 2).include?("#{i}") do |c|
       c.vm.provider 'virtualbox' do |v|
         v.cpus = 2
         v.memory = 2048
