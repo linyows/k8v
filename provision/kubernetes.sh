@@ -11,6 +11,9 @@ setup_kubectl() {
   mkdir -p /home/vagrant/.kube
   cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
   chown -R vagrant:vagrant /home/vagrant/.kube
+
+  kubectl get nodes
+  kubectl get po -o wide -n kube-system
 }
 
 apt-get update
@@ -49,6 +52,14 @@ if [ $? -eq 0 ]; then
   # Init kubeadm
   if [ "$HOSTNAME" == "master-1" ]; then
     kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
+    setup_kubectl
+    # Apply CNI
+    kubectl apply -f /vagrant/weave/net.yaml
+        #kubectl apply -f /vagrant/flannel/flannel.yaml
+
+    # Export to shared dir
+    rm -rf /vagrant/shared/kubernetes
+    cp -R /etc/kubernetes /vagrant/shared
   else
     # Import from shared dir
     mkdir -p /etc/kubernetes/pki/etcd
@@ -61,23 +72,8 @@ if [ $? -eq 0 ]; then
     cp /vagrant/shared/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
     cp /vagrant/shared/kubernetes/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
     cp /vagrant/shared/kubernetes/admin.conf /etc/kubernetes/
+    kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.$HOSTNAME.log
     setup_kubectl
-    kubeadm init --config=/vagrant/weave/kubeadm-config.yaml
-  fi
-  #kubeadm init --config=/vagrant/flannel/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
-  setup_kubectl
-
-  # Apply CNI
-  kubectl apply -f /vagrant/weave/weave-net.yaml
-  #kubectl apply -f /vagrant/flannel/flannel.yaml
-
-  kubectl get nodes
-  kubectl get po -o wide -n kube-system
-
-  if [ "$HOSTNAME" == "master-1" ]; then
-    # Export to shared dir
-    rm -rf /vagrant/shared/kubernetes
-    cp -R /etc/kubernetes /vagrant/shared
   fi
 
 # Worker Node
