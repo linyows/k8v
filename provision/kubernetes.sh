@@ -54,7 +54,7 @@ if [ $? -eq 0 ]; then
     kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
     setup_kubectl
     # Apply CNI
-    kubectl apply -f /vagrant/weave/net.yaml
+    kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
         #kubectl apply -f /vagrant/flannel/flannel.yaml
 
     # Export to shared dir
