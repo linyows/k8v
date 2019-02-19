@@ -10,7 +10,7 @@ controlPlaneEndpoint: "k8s.local:6443"
 networking:
   dnsDomain: "cluster.local"
   podSubnet: "10.32.0.0/16"
-serviceSubnet: "10.32.0.0/16"
+  serviceSubnet: "10.32.0.0/16"
 ---
 kind: KubeProxyConfiguration
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
