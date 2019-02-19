@@ -3,7 +3,7 @@
 KUBEVER=1.13.1-00
 LBIP=172.16.20.10
 LBDNS="k8s.local"
-CLUSTERIP="10.244.0.10"
+CLUSTERIP="10.32.0.10"
 
 setup_kubectl() {
   mkdir -p $HOME/.kube
