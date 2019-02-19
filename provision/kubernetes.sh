@@ -46,10 +46,6 @@ IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
 echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
 systemctl restart kubelet
 
-# Add routing to LB by enp0s3
-route add 10.0.2.15 gw 172.16.20.11
-route add 10.32.0.1 gw 172.16.20.11
-
 echo $HOSTNAME | grep -q 'master'
 # Master Node
 if [ $? -eq 0 ]; then
