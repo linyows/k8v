@@ -1,7 +1,7 @@
 #!/bin/bash -xe
 
 KUBEVER=1.13.1-00
-LBIP=172.16.20.10
+LBIP=192.168.50.10
 LBDNS="k8s.local"
 CLUSTERIP="10.32.0.10"
 
@@ -66,7 +66,7 @@ if [ $? -eq 0 ]; then
     #  waittime=$(expr $waittime + 1)
     #done
     #cp -R /etc/cni /vagrant/shared
-    sed -i 's/10\.0\.2\.15/172.16.20.11/g' /vagrant/shared/kubernetes/manifests/kube-apiserver.yaml
+    sed -i 's/10\.0\.2\.15/192.168.50.11/g' /vagrant/shared/kubernetes/manifests/kube-apiserver.yaml
   else
     # Add routing to LB by enp0s3
     #route add 10.0.2.15 gw 172.16.20.11

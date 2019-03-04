@@ -2,7 +2,7 @@
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
 localAPIEndpoint:
-  advertiseAddress: 172.16.20.11
+  advertiseAddress: 192.168.50.11
   bindPort: 6443
 ---
 # https://godoc.org/k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm#ClusterConfiguration
