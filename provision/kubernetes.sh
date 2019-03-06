@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -x
 
 KUBEVER=1.13.1-00
 LBIP=192.168.50.10
