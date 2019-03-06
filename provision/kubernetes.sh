@@ -46,32 +46,22 @@ IP=$(ifconfig enp0s8 | grep inet | awk '{print $2}' | cut -d':' -f2)
 echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
 systemctl restart kubelet
 
-echo $HOSTNAME | grep -q 'master'
 # Master Node
+echo $HOSTNAME | grep -q 'master'
 if [ $? -eq 0 ]; then
   # Init kubeadm
   if [ "$HOSTNAME" == "master-1" ]; then
     kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.log
     setup_kubectl
+
     # Apply CNI
     kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
-        #kubectl apply -f /vagrant/flannel/flannel.yaml
+    #kubectl apply -f /vagrant/flannel/flannel.yaml
 
     # Export to shared dir
     rm -rf /vagrant/shared/kubernetes
     cp -R /etc/kubernetes /vagrant/shared
-    #waittime=0
-    #until [ -f "/etc/cni" ] || [ $waittime -eq 100 ]; do
-    #  sleep 1
-    #  waittime=$(expr $waittime + 1)
-    #done
-    #cp -R /etc/cni /vagrant/shared
-    #sed -i 's/10\.0\.2\.15/192.168.50.11/g' /vagrant/shared/kubernetes/manifests/kube-apiserver.yaml
   else
-    # Add routing to LB by enp0s3
-    #route add 10.0.2.15 gw 172.16.20.11
-    #route add 10.32.0.1 gw 172.16.20.11
-
     # Import from shared dir
     mkdir -p /etc/kubernetes/pki/etcd
     cp /vagrant/shared/kubernetes/pki/ca.crt /etc/kubernetes/pki/
@@ -83,9 +73,11 @@ if [ $? -eq 0 ]; then
     cp /vagrant/shared/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
     cp /vagrant/shared/kubernetes/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
     cp /vagrant/shared/kubernetes/admin.conf /etc/kubernetes/
-    #cp -R /vagrant/shared/cni /etc
+
+    # Replace api endpoint for init
     cp /vagrant/weave/kubeadm-config.yaml /etc/kubeadm-config.yaml
     sed -i "s/192\.168\.50\.11/$IP/g" /etc/kubeadm-config.yaml
+
     kubeadm init --config=/etc/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.$HOSTNAME.log
     setup_kubectl
   fi
