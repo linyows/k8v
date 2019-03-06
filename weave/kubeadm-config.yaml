@@ -1,0 +1,23 @@
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 192.168.50.11
+  bindPort: 6443
+---
+# https://kubernetes.io/docs/setup/independent/high-availability/
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: stable
+apiServer:
+  certSANs:
+  - "k8s.local"
+controlPlaneEndpoint: "k8s.local:6443"
+networking:
+  dnsDomain: "cluster.local"
+  podSubnet: "10.32.0.0/12"
+  serviceSubnet: "10.32.0.0/12"
+---
+kind: KubeProxyConfiguration
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+mode: userspace
