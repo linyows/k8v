@@ -66,7 +66,7 @@ if [ $? -eq 0 ]; then
     #  waittime=$(expr $waittime + 1)
     #done
     #cp -R /etc/cni /vagrant/shared
-    sed -i 's/10\.0\.2\.15/192.168.50.11/g' /vagrant/shared/kubernetes/manifests/kube-apiserver.yaml
+    #sed -i 's/10\.0\.2\.15/192.168.50.11/g' /vagrant/shared/kubernetes/manifests/kube-apiserver.yaml
   else
     # Add routing to LB by enp0s3
     #route add 10.0.2.15 gw 172.16.20.11
@@ -84,7 +84,9 @@ if [ $? -eq 0 ]; then
     cp /vagrant/shared/kubernetes/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
     cp /vagrant/shared/kubernetes/admin.conf /etc/kubernetes/
     #cp -R /vagrant/shared/cni /etc
-    kubeadm init --config=/vagrant/weave/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.$HOSTNAME.log
+    cp /vagrant/weave/kubeadm-config.yaml /etc/kubeadm-config.yaml
+    sed -i "s/192\.168\.50\.11/$IP/g" /etc/kubeadm-config.yaml
+    kubeadm init --config=/etc/kubeadm-config.yaml | tee /vagrant/shared/kubeadm-init.$HOSTNAME.log
     setup_kubectl
   fi
 
