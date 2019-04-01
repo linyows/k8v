@@ -2,6 +2,9 @@
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/
 
+export PATH="$PATH:/opt/bin"
+echo '127.0.0.1 master-1' >> /etc/hosts
+
 # Install CNI plugins
 CNI_VERSION="v0.6.0"
 mkdir -p /opt/cni/bin
@@ -29,6 +32,18 @@ curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/bu
 #LBDNS="k8s.local"
 CLUSTERIP="10.32.0.10"
 IP=$(ifconfig eth1 | grep 'inet ' | awk '{print $2}')
-echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
+CGD=$(docker info | grep cgroup | awk '{print $3}')
+echo "KUBELET_EXTRA_ARGS=\"--cgroup-driver=$CGD --node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
 
+# Specify cgroup driver
+echo "DOCKER_CGROUPS=\"--exec-opt native.cgroupdriver=systemd\"" >> /run/metadata/torcx
+systemctl enable docker && systemctl restart docker
+
+# Enable kublet
 systemctl enable kubelet && systemctl start kubelet
+
+# Init kubeadm
+SHAREDIR=/home/core/share
+kubeadm init --config=$SHAREDIR/weave/kubeadm-config.yaml | tee $SHAREDIR/shared/kubeadm-init.log
+#$SHAREDIR/provision/setup-kubectl.sh
+#kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
