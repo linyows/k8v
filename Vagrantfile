@@ -74,7 +74,7 @@ Vagrant.configure('2') do |config|
       end
       c.vm.hostname = name
       c.vm.network 'private_network', ip: "192.168.50.#{i+10}"
-      c.vm.provision 'shell', path: 'provision/kubernetes.sh'
+      c.vm.provision 'shell', path: 'provision/ubuntu.sh'
     end
   end
 end if ENV['OS'] == 'ubuntu'

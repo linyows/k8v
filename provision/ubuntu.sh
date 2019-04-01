@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-KUBEVER=1.13.1-00
+KUBEVER=1.14.0-00
 LBIP=192.168.50.10
 LBDNS="k8s.local"
 CLUSTERIP="10.32.0.10"
