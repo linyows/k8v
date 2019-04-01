@@ -14,11 +14,11 @@ Vagrant.configure('2') do |config|
     Dir.chdir(Dir.home) { system "vagrant plugin install #{name}" }
   end
 
-  config.vm.box = 'coreos-stable'
-  config.vm.box_url = 'https://stable.release.core-os.net/amd64-usr/current/coreos_production_vagrant_virtualbox.json'
+  update_channel = 'alpha'
+  config.vm.box = "coreos-#{update_channel}"
+  config.vm.box_url = "https://#{update_channel}.release.core-os.net/amd64-usr/current/coreos_production_vagrant_virtualbox.json"
   config.ssh.insert_key = false
   config.ssh.forward_agent = true
-  config.ignition.enabled = true
 
   # Masters and Workers
   (1..6).each do |i|
@@ -27,18 +27,17 @@ Vagrant.configure('2') do |config|
       c.vm.provider 'virtualbox' do |v|
         v.check_guest_additions = false
         v.functional_vboxsf = false
-        v.gui = false
-        v.memory = 1024
+        v.memory = 2048
         v.cpus = 1
-        v.customize ["modifyvm", :id, "--cpuexecutioncap", "100"]
         config.ignition.config_obj = v
       end
       c.vm.hostname = name
       ip = "192.168.50.#{i+10}"
-      c.vm.network 'private_network', ip: "192.168.50.#{i+10}"
       c.vm.network 'private_network', ip: ip
+      c.vm.provision 'shell', path: 'provision/coreos.sh'
       c.vm.synced_folder '.', '/home/core/share', id: 'core',
         :nfs => true, :mount_options => ['nolock,vers=3,udp']
+      c.ignition.enabled = true
       c.ignition.ip = ip
       c.ignition.hostname = name
       c.ignition.drive_name = "config-#{i}"
