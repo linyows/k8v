@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-KUBEVER=1.13.1-00
+KUBEVER=1.14.0-00
 LBIP=192.168.50.10
 LBDNS="k8s.local"
 CLUSTERIP="10.32.0.10"
@@ -11,9 +11,6 @@ setup_kubectl() {
   mkdir -p /home/vagrant/.kube
   cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
   chown -R vagrant:vagrant /home/vagrant/.kube
-
-  kubectl get nodes
-  kubectl get po -o wide -n kube-system
 }
 
 apt-get update
