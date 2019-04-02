@@ -11,9 +11,6 @@ setup_kubectl() {
   mkdir -p /home/vagrant/.kube
   cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
   chown -R vagrant:vagrant /home/vagrant/.kube
-
-  kubectl get nodes
-  kubectl get po -o wide -n kube-system
 }
 
 apt-get update

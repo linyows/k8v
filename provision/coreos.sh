@@ -2,8 +2,13 @@
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/
 
+export DIR=/home/core/share
 export PATH="$PATH:/opt/bin"
-echo '127.0.0.1 master-1' >> /etc/hosts
+#LBIP=192.168.50.10
+LBDNS="k8s.local"
+CLUSTERIP="10.32.0.10"
+echo "127.0.0.1 $HOSTNAME $LBDNS" >> /etc/hosts
+swapoff -a
 
 # Install CNI plugins
 CNI_VERSION="v0.6.0"
@@ -27,23 +32,22 @@ curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/bu
 mkdir -p /etc/systemd/system/kubelet.service.d
 curl -sSL "https://raw.githubusercontent.com/kubernetes/kubernetes/${RELEASE}/build/debs/10-kubeadm.conf" | sed "s:/usr/bin:/opt/bin:g" > /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
 
-#KUBEVER=1.13.1-00
-#LBIP=192.168.50.10
-#LBDNS="k8s.local"
-CLUSTERIP="10.32.0.10"
-IP=$(ifconfig eth1 | grep 'inet ' | awk '{print $2}')
-CGD=$(docker info | grep cgroup | awk '{print $3}')
-echo "KUBELET_EXTRA_ARGS=\"--cgroup-driver=$CGD --node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
-
 # Specify cgroup driver
 echo "DOCKER_CGROUPS=\"--exec-opt native.cgroupdriver=systemd\"" >> /run/metadata/torcx
 systemctl enable docker && systemctl restart docker
 
 # Enable kublet
+IP=$(ifconfig eth1 | grep 'inet ' | awk '{print $2}')
+echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
 systemctl enable kubelet && systemctl start kubelet
 
 # Init kubeadm
-SHAREDIR=/home/core/share
-kubeadm init --config=$SHAREDIR/weave/kubeadm-config.yaml | tee $SHAREDIR/shared/kubeadm-init.log
-#$SHAREDIR/provision/setup-kubectl.sh
-#kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+kubeadm init --config=$DIR/weave/kubeadm-config.yaml --ignore-preflight-errors=NumCPU | tee $DIR/shared/kubeadm-init.log
+# Setup kubectl
+mkdir -p $HOME/.kube
+cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+mkdir -p /home/core/.kube
+cp -i /etc/kubernetes/admin.conf /home/core/.kube/config
+chown -R core:core /home/core/.kube
+# Setup CNI
+kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
