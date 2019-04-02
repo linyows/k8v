@@ -6,6 +6,8 @@ Use Kubeadm on Vagrant to create a multi-master environment for Kubernetes clust
 Usage
 --
 
+Use Ubuntu:
+
 ```sh
 $ k8v master 🏄 vagrant up
 ... provision ...
@@ -49,6 +51,14 @@ weave-net-4fxhn                    2/2     Running   0          48m   192.168.50
 weave-net-th6d7                    2/2     Running   0          12m   192.168.50.14   worker-1   <none>           <none>
 weave-net-vf2ht                    2/2     Running   0          62m   192.168.50.11   master-1   <none>           <none>
 weave-net-w97cq                    2/2     Running   0          54m   192.168.50.12   master-2   <none>           <none>
+```
+
+Use CoreOS(Linux Container):
+
+```sh
+$ k8v master 🏄 export OS=coreos
+$ k8v master 🏄 vagrant up
+...
 ```
 
 Required
