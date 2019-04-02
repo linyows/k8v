@@ -4,11 +4,21 @@
 
 export DIR=/home/core/share
 export PATH="$PATH:/opt/bin"
-#LBIP=192.168.50.10
+LBIP=192.168.50.11
 LBDNS="k8s.local"
 CLUSTERIP="10.32.0.10"
-echo "127.0.0.1 $HOSTNAME $LBDNS" >> /etc/hosts
+KUBEADM_OPTIONS="--ignore-preflight-errors=NumCPU"
+echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
+echo "$LBIP $LBDNS" >> /etc/hosts
 swapoff -a
+
+setup_kubectl() {
+  mkdir -p $HOME/.kube
+  cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  mkdir -p /home/core/.kube
+  cp -i /etc/kubernetes/admin.conf /home/core/.kube/config
+  chown -R core:core /home/core/.kube
+}
 
 # Install CNI plugins
 CNI_VERSION="v0.6.0"
@@ -41,13 +51,40 @@ IP=$(ifconfig eth1 | grep 'inet ' | awk '{print $2}')
 echo "KUBELET_EXTRA_ARGS=\"--node-ip=$IP --cluster-dns=$CLUSTERIP\"" > /etc/default/kubelet
 systemctl enable kubelet && systemctl start kubelet
 
-# Init kubeadm
-kubeadm init --config=$DIR/weave/kubeadm-config.yaml --ignore-preflight-errors=NumCPU | tee $DIR/shared/kubeadm-init.log
-# Setup kubectl
-mkdir -p $HOME/.kube
-cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-mkdir -p /home/core/.kube
-cp -i /etc/kubernetes/admin.conf /home/core/.kube/config
-chown -R core:core /home/core/.kube
-# Setup CNI
-kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+# Master Node
+echo $HOSTNAME | grep -q 'master'
+if [ $? -eq 0 ]; then
+  # Init kubeadm
+  if [ "$HOSTNAME" == "master-1" ]; then
+    kubeadm init --config=$DIR/weave/kubeadm-config.yaml $KUBEADM_OPTIONS | tee $DIR/shared/kubeadm-init.log
+    setup_kubectl
+    kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+
+    # Export to shared dir
+    rm -rf $DIR/shared/kubernetes
+    cp -R /etc/kubernetes $DIR/shared
+  else
+    # Import from shared dir
+    mkdir -p /etc/kubernetes/pki/etcd
+    cp $DIR/shared/kubernetes/pki/ca.crt /etc/kubernetes/pki/
+    cp $DIR/shared/kubernetes/pki/ca.key /etc/kubernetes/pki/
+    cp $DIR/shared/kubernetes/pki/sa.pub /etc/kubernetes/pki/
+    cp $DIR/shared/kubernetes/pki/sa.key /etc/kubernetes/pki/
+    cp $DIR/shared/kubernetes/pki/front-proxy-ca.crt /etc/kubernetes/pki/
+    cp $DIR/shared/kubernetes/pki/front-proxy-ca.key /etc/kubernetes/pki/
+    cp $DIR/shared/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/
+    cp $DIR/shared/kubernetes/pki/etcd/ca.key /etc/kubernetes/pki/etcd/
+    cp $DIR/shared/kubernetes/admin.conf /etc/kubernetes/
+
+    # Replace api endpoint for init
+    cp $DIR/weave/kubeadm-config.yaml /etc/kubeadm-config.yaml
+    sed -i "s/192\.168\.50\.11/$IP/g" /etc/kubeadm-config.yaml
+
+    kubeadm init --config=/etc/kubeadm-config.yaml $KUBEADM_OPTIONS | tee $DIR/shared/kubeadm-init.$HOSTNAME.log
+    setup_kubectl
+  fi
+
+# Worker Node
+else
+  eval $(grep "kubeadm join" $DIR/shared/kubeadm-init.log)
+fi
