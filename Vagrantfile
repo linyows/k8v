@@ -14,6 +14,20 @@ Vagrant.configure('2') do |config|
     Dir.chdir(Dir.home) { system "vagrant plugin install #{name}" }
   end
 
+  #if ARGV[0].eql?('up')
+  #  require 'open-uri'
+  #  require 'yaml'
+  #  token = open('https://discovery.etcd.io/new?size=3').read
+  #  data['coreos']['etcd2']['discovery'] = token
+  #  data['coreos']['etcd2']['advertise-client-urls'] = 'http://$public_ipv4:2379'
+  #  data['coreos']['etcd2']['initial-advertise-peer-urls'] = 'http://$private_ipv4:2380'
+  #  data['coreos']['etcd2']['listen-client-urls'] = 'http://0.0.0.0:2379,http://0.0.0.0:4001'
+  #  data['coreos']['etcd2']['listen-peer-urls'] = 'http://$private_ipv4:2380,http://$private_ipv4:7001'
+  #  data['coreos']['units'].push({ name: 'etcd2.service', command: 'start' })
+  #  data['coreos']['update']['reboot-strategy'] = 'off'
+  #  File.open('user-data', 'w') { |file| file.write("#cloud-config\n\n#{YAML.dump(data)}") }
+  #end
+
   update_channel = 'alpha'
   config.vm.box = "coreos-#{update_channel}"
   config.vm.box_url = "https://#{update_channel}.release.core-os.net/amd64-usr/current/coreos_production_vagrant_virtualbox.json"
@@ -41,6 +55,7 @@ Vagrant.configure('2') do |config|
       c.ignition.ip = ip
       c.ignition.hostname = name
       c.ignition.drive_name = "config-#{i}"
+      #c.ignition.path = 'config.ign'
     end
   end
 end if ENV['OS'] == 'coreos'
