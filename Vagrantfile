@@ -14,19 +14,28 @@ Vagrant.configure('2') do |config|
     Dir.chdir(Dir.home) { system "vagrant plugin install #{name}" }
   end
 
-  #if ARGV[0].eql?('up')
-  #  require 'open-uri'
-  #  require 'yaml'
-  #  token = open('https://discovery.etcd.io/new?size=3').read
-  #  data['coreos']['etcd2']['discovery'] = token
-  #  data['coreos']['etcd2']['advertise-client-urls'] = 'http://$public_ipv4:2379'
-  #  data['coreos']['etcd2']['initial-advertise-peer-urls'] = 'http://$private_ipv4:2380'
-  #  data['coreos']['etcd2']['listen-client-urls'] = 'http://0.0.0.0:2379,http://0.0.0.0:4001'
-  #  data['coreos']['etcd2']['listen-peer-urls'] = 'http://$private_ipv4:2380,http://$private_ipv4:7001'
-  #  data['coreos']['units'].push({ name: 'etcd2.service', command: 'start' })
-  #  data['coreos']['update']['reboot-strategy'] = 'off'
-  #  File.open('user-data', 'w') { |file| file.write("#cloud-config\n\n#{YAML.dump(data)}") }
-  #end
+  def create_ign(i, pub_ip, prv_ip)
+    require 'open-uri'
+    require 'json'
+    d = {
+      coreos: {
+        etcd2: {
+          :discovery => open('https://discovery.etcd.io/new?size=3').read,
+          :'advertise-client-urls' => "http://#{pub_ip}:2379",
+          :'initial-advertise-peer-urls' => "http://#{prv_ip}:2380",
+          :'listen-client-urls' => 'http://0.0.0.0:2379,http://0.0.0.0:4001',
+          :'listen-peer-urls' => "http://#{prv_ip}:2380,http://#{prv_ip}:7001"
+        },
+        units: [
+          { name: 'etcd2.service', command: 'start' }
+        ],
+        update: {
+          :'reboot-strategy' => 'off'
+        }
+      }
+    }
+    File.open("config-#{i}.ign", 'w') { |f| f.write(d.to_json) }
+  end
 
   update_channel = 'alpha'
   config.vm.box = "coreos-#{update_channel}"
@@ -55,7 +64,8 @@ Vagrant.configure('2') do |config|
       c.ignition.ip = ip
       c.ignition.hostname = name
       c.ignition.drive_name = "config-#{i}"
-      #c.ignition.path = 'config.ign'
+      #create_ign(i, ip, '10.0.2.15') if ARGV[0].eql?('up')
+      #c.ignition.path = "config-#{i}.ign"
     end
   end
 end if ENV['OS'] == 'coreos'
