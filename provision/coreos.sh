@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/
 
@@ -86,5 +86,9 @@ if [ $? -eq 0 ]; then
 
 # Worker Node
 else
-  eval $(grep "kubeadm join" $DIR/shared/kubeadm-init.log)
+  CMD="$(grep '^kubeadm join' $DIR/shared/kubeadm-init.log | sed 's/\\//')"
+  CMD="$CMD$(grep -A1 '^kubeadm join' $DIR/shared/kubeadm-init.log | tail -1)"
+  eval $CMD
+  cp $DIR/shared/kubernetes/admin.conf /etc/kubernetes/
+  setup_kubectl
 fi
