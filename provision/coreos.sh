@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # https://kubernetes.io/docs/setup/independent/install-kubeadm/
 
