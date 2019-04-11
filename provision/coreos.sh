@@ -57,7 +57,7 @@ echo $HOSTNAME | grep -q 'master'
 if [ $? -eq 0 ]; then
   # Init kubeadm
   if [ "$HOSTNAME" == "master-1" ]; then
-    kubeadm init --config=$DIR/weave/kubeadm-config.yaml $KUBEADM_OPTIONS | tee $DIR/shared/kubeadm-init.log
+    kubeadm init --experimental-upload-certs --config=$DIR/weave/kubeadm-config.yaml $KUBEADM_OPTIONS | tee $DIR/shared/kubeadm-init.log
     setup_kubectl
     kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
 
@@ -81,14 +81,16 @@ if [ $? -eq 0 ]; then
     cp $DIR/weave/kubeadm-config.yaml /etc/kubeadm-config.yaml
     sed -i "s/192\.168\.50\.11/$IP/g" /etc/kubeadm-config.yaml
 
-    kubeadm init --config=/etc/kubeadm-config.yaml $KUBEADM_OPTIONS | tee $DIR/shared/kubeadm-init.$HOSTNAME.log
+    kubeadm init --experimental-upload-certs --config=/etc/kubeadm-config.yaml $KUBEADM_OPTIONS | tee $DIR/shared/kubeadm-init.$HOSTNAME.log
     setup_kubectl
   fi
 
 # Worker Node
 else
-  CMD="$(grep '^kubeadm join' $DIR/shared/kubeadm-init.log | sed 's/\\//')"
-  CMD="$CMD$(grep -A1 '^kubeadm join' $DIR/shared/kubeadm-init.log | tail -1)"
+  CMD="$(grep '\skubeadm join' $DIR/shared/kubeadm-init.log | sed 's/\\//')"
+  CMD="$CMD$(grep -A1 '\skubeadm join' $DIR/shared/kubeadm-init.log | tail -1 | sed 's/\\//')"
+  CMD="$CMD$(grep -A2 '\skubeadm join' $DIR/shared/kubeadm-init.log | tail -1)"
+  CMD="$CMD $KUBEADM_OPTIONS"
   eval $CMD
   cp $DIR/shared/kubernetes/admin.conf /etc/kubernetes/
   setup_kubectl
