@@ -14,29 +14,6 @@ Vagrant.configure('2') do |config|
     Dir.chdir(Dir.home) { system "vagrant plugin install #{name}" }
   end
 
-  def create_ign(i, pub_ip, prv_ip)
-    require 'open-uri'
-    require 'json'
-    d = {
-      coreos: {
-        etcd2: {
-          :discovery => open('https://discovery.etcd.io/new?size=3').read,
-          :'advertise-client-urls' => "http://#{pub_ip}:2379",
-          :'initial-advertise-peer-urls' => "http://#{prv_ip}:2380",
-          :'listen-client-urls' => 'http://0.0.0.0:2379,http://0.0.0.0:4001',
-          :'listen-peer-urls' => "http://#{prv_ip}:2380,http://#{prv_ip}:7001"
-        },
-        units: [
-          { name: 'etcd2.service', command: 'start' }
-        ],
-        update: {
-          :'reboot-strategy' => 'off'
-        }
-      }
-    }
-    File.open("config-#{i}.ign", 'w') { |f| f.write(d.to_json) }
-  end
-
   update_channel = 'alpha'
   config.vm.box = "coreos-#{update_channel}"
   config.vm.box_url = "https://#{update_channel}.release.core-os.net/amd64-usr/current/coreos_production_vagrant_virtualbox.json"
@@ -58,14 +35,12 @@ Vagrant.configure('2') do |config|
       ip = "192.168.50.#{i+10}"
       c.vm.network 'private_network', ip: ip
       c.vm.provision 'shell', path: 'provision/coreos.sh'
-      c.vm.synced_folder '.', '/home/core/share', id: 'core',
-        :nfs => true, :mount_options => ['nolock,vers=3,udp']
+      c.vm.synced_folder '.', '/home/core/share', id: 'core', :nfs => true, :mount_options => ['nolock,vers=3,udp']
       c.ignition.enabled = true
       c.ignition.ip = ip
       c.ignition.hostname = name
       c.ignition.drive_name = "config-#{i}"
-      #create_ign(i, ip, '10.0.2.15') if ARGV[0].eql?('up')
-      #c.ignition.path = "config-#{i}.ign"
+      #c.ignition.path = 'baseign.json'
     end
   end
 end if ENV['OS'] == 'coreos'
