@@ -10,6 +10,7 @@ CLUSTERIP="10.32.0.10"
 KUBEADM_OPTIONS="--ignore-preflight-errors=NumCPU"
 echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 echo "$LBIP $LBDNS" >> /etc/hosts
+echo 'export PATH=$PATH:/opt/bin' > /etc/profile.d/optbinpath.sh
 swapoff -a
 
 setup_kubectl() {
